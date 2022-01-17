@@ -1,4 +1,6 @@
-from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey, DateTime, create_engine
+from dataclasses import dataclass
+
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, create_engine
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -7,6 +9,18 @@ Base = declarative_base()
 # Таблица встреч
 class Meeting(Base):
     __tablename__ = 'meetings'
+
+    def as_dict(self):
+        meeting_dict = {'id': self.id,
+                        'start_date_time': self.start_date_time.strftime('%Y-%m-%dT%H:%M:%S'),
+                        'end_date_time': self.end_date_time.strftime('%Y-%m-%dT%H:%M:%S'),
+                        'emails': []}
+
+        for email in self.emails:
+            meeting_dict['emails'].append({'email': email.email, 'id': email.id})
+
+        return meeting_dict
+
     id = Column(Integer, primary_key=True)
     title = Column(String(256))
     start_date_time = Column(DateTime)

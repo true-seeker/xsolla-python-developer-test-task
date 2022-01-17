@@ -1,8 +1,10 @@
-from flask import Flask, request, jsonify
-from models import Meeting, ParticipantEmails, engine
 import json
 from datetime import datetime
+
+from flask import Flask, request, jsonify
 from sqlalchemy.orm import sessionmaker
+
+from models import Meeting, ParticipantEmails, engine
 
 app = Flask(__name__)
 Session = sessionmaker(bind=engine)
@@ -21,7 +23,7 @@ def reformat_datetime(dt):
 
 
 # TODO pydantic
-@app.route('/api/meetings/create', methods=['GET', 'POST'])  # TODO remove get
+@app.route('/api/meeting/create', methods=['GET', 'POST'])  # TODO remove get
 def meeting_create():
     session = Session()
 
@@ -45,7 +47,7 @@ def meeting_create():
     return jsonify({'ok': True, 'created_id': new_meeting.id})
 
 
-@app.route('/api/meetings/edit', methods=['GET', 'POST'])  # TODO remove get
+@app.route('/api/meeting/edit', methods=['GET', 'POST'])  # TODO remove get
 def meeting_edit():
     session = Session()
 
@@ -73,7 +75,7 @@ def meeting_edit():
     return jsonify({'ok': True, 'edited_id': meeting.id})
 
 
-@app.route('/api/meetings/delete', methods=['GET', 'POST'])  # TODO remove get
+@app.route('/api/meeting/delete', methods=['GET', 'POST'])  # TODO remove get
 def meeting_delete():
     session = Session()
 
@@ -85,6 +87,17 @@ def meeting_delete():
     session.commit()
 
     return jsonify({'ok': True})
+
+
+@app.route('/api/meetings/get', methods=['GET'])
+def meeting_get():
+    session = Session()
+
+    print(request.json)
+    meeting_json = request_json3['meeting']  # TODO request json
+    meeting = session.get(Meeting, meeting_json['id'])  # TODO if None
+
+    return jsonify(meeting.as_dict())
 
 
 if __name__ == '__main__':
