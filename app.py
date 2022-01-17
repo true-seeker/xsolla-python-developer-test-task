@@ -9,6 +9,7 @@ Session = sessionmaker(bind=engine)
 
 request_json = json.load(open('test.json'))
 request_json2 = json.load(open('test2.json'))
+request_json3 = json.load(open('test3.json'))
 
 
 def reformat_datetime(dt):
@@ -44,14 +45,14 @@ def meeting_create():
     return jsonify({'ok': True, 'created_id': new_meeting.id})
 
 
-@app.route('/api/meetings/edit', methods=['GET', 'POST'])
+@app.route('/api/meetings/edit', methods=['GET', 'POST'])  # TODO remove get
 def meeting_edit():
     session = Session()
 
     print(request.json)
     new_meeting_json = request_json2['meeting']  # TODO request json
 
-    meeting = session.query(Meeting).filter_by(id=new_meeting_json['id']).first()
+    meeting = session.get(Meeting, new_meeting_json['id'])  # TODO if None
 
     meeting.title = new_meeting_json['title']
     meeting.start_date_time = reformat_datetime(new_meeting_json['start_date_time'])
@@ -70,6 +71,20 @@ def meeting_edit():
     print(meeting)
 
     return jsonify({'ok': True, 'edited_id': meeting.id})
+
+
+@app.route('/api/meetings/delete', methods=['GET', 'POST'])  # TODO remove get
+def meeting_delete():
+    session = Session()
+
+    print(request.json)
+    meeting_json = request_json2['meeting']  # TODO request json
+    meeting = session.get(Meeting, meeting_json['id'])  # TODO if None
+
+    session.delete(meeting)
+    session.commit()
+
+    return jsonify({'ok': True})
 
 
 if __name__ == '__main__':

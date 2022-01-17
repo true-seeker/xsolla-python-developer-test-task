@@ -11,7 +11,7 @@ class Meeting(Base):
     title = Column(String(256))
     start_date_time = Column(DateTime)
     end_date_time = Column(DateTime)
-    # emails = relationship("ParticipantEmails", back_populates='meeting', cascade="all, delete, delete-orphan")
+    emails = relationship("ParticipantEmails", back_populates='meeting', cascade="all, delete, delete-orphan")
 
     def __repr__(self):
         return f'{self.id}|{self.title}|{self.start_date_time}|{self.end_date_time}'
@@ -21,8 +21,8 @@ class Meeting(Base):
 class ParticipantEmails(Base):
     __tablename__ = 'participant_emails'
     id = Column(Integer, primary_key=True)
-    meeting_id = Column(ForeignKey('meetings.id', ondelete='CASCADE'))
-    # meeting = relationship("Meeting", back_populates="emails")
+    meeting_id = Column(ForeignKey('meetings.id'))
+    meeting = relationship("Meeting", back_populates="emails")
     email = Column(String(128))
 
     def __repr__(self):
