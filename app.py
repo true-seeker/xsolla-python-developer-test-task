@@ -20,7 +20,7 @@ def make_pydantic_error_message(e):
     return error_message
 
 
-@app.route('/api/meeting/create', methods=['GET', 'POST'])  # TODO remove get
+@app.route('/api/meeting/create', methods=['POST'])
 def meeting_create():
     session = Session()
 
@@ -52,11 +52,9 @@ def meeting_create():
     return jsonify({'ok': True, 'created_id': new_meeting.id})
 
 
-@app.route('/api/meeting/edit/<meeting_id>', methods=['GET', 'PATCH'])  # TODO remove get
+@app.route('/api/meeting/edit/<meeting_id>', methods=['PATCH'])
 def meeting_edit(meeting_id):
     session = Session()
-
-    print(request.json)
     if request.json is None:
         return jsonify({'ok': False, 'error': 'json is missing'})
     if request.json.get('meeting') is None:
@@ -90,7 +88,7 @@ def meeting_edit(meeting_id):
     return jsonify({'ok': True, 'edited_id': meeting.id})
 
 
-@app.route('/api/meeting/delete/<meeting_id>', methods=['GET', 'DELETE'])  # TODO remove get
+@app.route('/api/meeting/delete/<meeting_id>', methods=['DELETE'])
 def meeting_delete(meeting_id):
     session = Session()
 
@@ -140,7 +138,8 @@ def meetings_get_all():
 
     return jsonify({'meetings': [m.as_dict() for m in meetings],
                     'has_next_page': has_next_page,
-                    'page_size': page_size})
+                    'page_size': page_size,
+                    'page': page})
 
 
 if __name__ == '__main__':
