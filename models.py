@@ -12,8 +12,8 @@ class Meeting(Base):
 
     def as_dict(self):
         meeting_dict = {'id': self.id,
-                        'start_date_time': self.start_date_time.strftime('%Y-%m-%dT%H:%M:%S'),
-                        'end_date_time': self.end_date_time.strftime('%Y-%m-%dT%H:%M:%S'),
+                        'start_date_time': self.start_date_time.strftime('%Y-%m-%dT%H:%M:%S') if self.start_date_time is not None else '',
+                        'end_date_time': self.end_date_time.strftime('%Y-%m-%dT%H:%M:%S') if self.end_date_time is not None else '',
                         'emails': []}
 
         for email in self.emails:

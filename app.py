@@ -1,5 +1,4 @@
 import json
-from datetime import datetime
 
 from flask import Flask, request, jsonify
 from pydantic import ValidationError
@@ -11,9 +10,7 @@ from pydantic_validation import MeetingSchema
 app = Flask(__name__)
 Session = sessionmaker(bind=engine)
 DEFAULT_PAGE_SIZE = 50
-request_json = json.load(open('test.json'))
-request_json2 = json.load(open('test2.json'))
-request_json3 = json.load(open('test3.json'))
+MAX_PAGE_SIZE = 100
 
 
 def make_pydantic_error_message(e):
@@ -28,11 +25,13 @@ def meeting_create():
     session = Session()
 
     print(request.json)
-    if request_json.get('meeting') is None:
+    if request.json is None:
+        return jsonify({'ok': False, 'error': 'json is missing'})
+    if request.json.get('meeting') is None:
         return jsonify({'ok': False, 'error': '"meeting" key is missing'})
 
     try:
-        meeting_validated = MeetingSchema(**request_json['meeting'])
+        meeting_validated = MeetingSchema(**request.json['meeting'])
     except ValidationError as e:
         error_message = make_pydantic_error_message(e)
         return jsonify({'ok': False, 'error': error_message})
@@ -53,14 +52,16 @@ def meeting_create():
     return jsonify({'ok': True, 'created_id': new_meeting.id})
 
 
-@app.route('/api/meeting/edit', methods=['GET', 'PATCH'])  # TODO remove get
-def meeting_edit():
+@app.route('/api/meeting/edit/<meeting_id>', methods=['GET', 'PATCH'])  # TODO remove get
+def meeting_edit(meeting_id):
     session = Session()
 
     print(request.json)
-    if request_json2.get('meeting') is None:
+    if request.json is None:
+        return jsonify({'ok': False, 'error': 'json is missing'})
+    if request.json.get('meeting') is None:
         return jsonify({'ok': False, 'error': '"meeting" key is missing'})
-    new_meeting_json = request_json2['meeting']
+    new_meeting_json = request.json['meeting']
 
     try:
         meeting_validated = MeetingSchema(**new_meeting_json)
@@ -68,9 +69,9 @@ def meeting_edit():
         error_message = make_pydantic_error_message(e)
         return jsonify({'ok': False, 'error': error_message})
 
-    meeting = session.get(Meeting, meeting_validated.id)
+    meeting = session.get(Meeting, meeting_id)
     if meeting is None:
-        return jsonify({'ok': False, 'error': f'meeting with id {meeting_validated.id} does not exists'})
+        return jsonify({'ok': False, 'error': f'Meeting with id {meeting_id} does not exists'})
 
     meeting.title = meeting_validated.title
     meeting.start_date_time = meeting_validated.start_date_time
@@ -89,13 +90,13 @@ def meeting_edit():
     return jsonify({'ok': True, 'edited_id': meeting.id})
 
 
-@app.route('/api/meeting/delete', methods=['GET', 'DELETE'])  # TODO remove get
-def meeting_delete():
+@app.route('/api/meeting/delete/<meeting_id>', methods=['GET', 'DELETE'])  # TODO remove get
+def meeting_delete(meeting_id):
     session = Session()
 
-    print(request.json)
-    meeting_json = request_json2['meeting']  # TODO request json
-    meeting = session.get(Meeting, meeting_json['id'])  # TODO if None
+    meeting = session.get(Meeting, meeting_id)
+    if meeting is None:
+        return jsonify({'ok': False, 'error': f'Meeting with id {meeting_id} does not exists'})
 
     session.delete(meeting)
     session.commit()
@@ -103,13 +104,14 @@ def meeting_delete():
     return jsonify({'ok': True})
 
 
-@app.route('/api/meeting/get', methods=['GET'])
-def meeting_get():
+@app.route('/api/meeting/get/<meeting_id>', methods=['GET'])
+def meeting_get(meeting_id):
     session = Session()
 
-    print(request.json)
-    meeting_json = request_json3['meeting']  # TODO request json
-    meeting = session.get(Meeting, meeting_json['id'])  # TODO if None
+    meeting = session.get(Meeting, meeting_id)
+
+    if meeting is None:
+        return jsonify({'ok': False, 'error': f'Meeting with id {meeting_id} does not exists'})
 
     return jsonify(meeting.as_dict())
 
@@ -118,17 +120,27 @@ def meeting_get():
 def meetings_get_all():
     session = Session()
 
-    print(request.json)
+    page = request.args.get('page')
+    if page is None:
+        page = 0
+    page = int(page)
 
-    page = 0  # TODO remove
-    meetings = session.query(Meeting).slice(page * DEFAULT_PAGE_SIZE, (page + 1) * DEFAULT_PAGE_SIZE)
+    page_size = request.args.get('page_size')
+    if page_size is None:
+        page_size = DEFAULT_PAGE_SIZE
+    page_size = int(page_size)
+
+    if page_size > MAX_PAGE_SIZE:
+        page_size = MAX_PAGE_SIZE
+
+    meetings = session.query(Meeting).slice(page * page_size, (page + 1) * page_size)
     meetings_count = session.query(Meeting).count()
 
-    has_next_page = True if (page + 1) * DEFAULT_PAGE_SIZE < meetings_count else False
+    has_next_page = True if (page + 1) * page_size < meetings_count else False
 
     return jsonify({'meetings': [m.as_dict() for m in meetings],
                     'has_next_page': has_next_page,
-                    'page_size': DEFAULT_PAGE_SIZE})
+                    'page_size': page_size})
 
 
 if __name__ == '__main__':
