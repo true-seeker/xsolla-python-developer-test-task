@@ -2,9 +2,11 @@ import json
 from datetime import datetime
 
 from flask import Flask, request, jsonify
+from pydantic import ValidationError
 from sqlalchemy.orm import sessionmaker
 
 from models import Meeting, ParticipantEmails, engine
+from pydantic_validation import MeetingSchema
 
 app = Flask(__name__)
 Session = sessionmaker(bind=engine)
@@ -12,6 +14,13 @@ DEFAULT_PAGE_SIZE = 50
 request_json = json.load(open('test.json'))
 request_json2 = json.load(open('test2.json'))
 request_json3 = json.load(open('test3.json'))
+
+
+def make_pydantic_error_message(e):
+    error_message = ''
+    for error in json.loads(e.json()):
+        error_message += f'{error["msg"]} at {",".join(error["loc"])};'
+    return error_message
 
 
 def reformat_datetime(dt):
@@ -22,20 +31,27 @@ def reformat_datetime(dt):
     return reformatted_datetime
 
 
-# TODO pydantic
 @app.route('/api/meeting/create', methods=['GET', 'POST'])  # TODO remove get
 def meeting_create():
     session = Session()
 
     print(request.json)
-    new_meeting_json = request_json['meeting']  # TODO request json
-    new_meeting = Meeting(title=new_meeting_json['title'],
-                          start_date_time=reformat_datetime(new_meeting_json['start_date_time']),
-                          end_date_time=reformat_datetime(new_meeting_json['end_date_time']))
+    if request_json.get('meeting') is None:
+        return jsonify({'ok': False, 'error': '"meeting" key is missing'})
+
+    try:
+        meeting_validated = MeetingSchema(**request_json['meeting'])
+    except ValidationError as e:
+        error_message = make_pydantic_error_message(e)
+        return jsonify({'ok': False, 'error': error_message})
+
+    new_meeting = Meeting(title=meeting_validated.title,
+                          start_date_time=meeting_validated.start_date_time,
+                          end_date_time=meeting_validated.end_date_time)
     session.add(new_meeting)
     session.commit()
 
-    for email in new_meeting_json['participant_emails']:
+    for email in meeting_validated.participant_emails:
         new_email = ParticipantEmails(meeting_id=new_meeting.id,
                                       email=email)
         session.add(new_email)
