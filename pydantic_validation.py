@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 
 class MeetingSchema(BaseModel):
+    id: int
     title: str
     start_date_time: Optional[datetime] = None
     end_date_time: Optional[datetime] = None

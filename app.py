@@ -23,14 +23,6 @@ def make_pydantic_error_message(e):
     return error_message
 
 
-def reformat_datetime(dt):
-    try:
-        reformatted_datetime = datetime.strptime(dt, '%Y-%m-%dT%H:%M:%S')
-    except ValueError:
-        return None  # TODO
-    return reformatted_datetime
-
-
 @app.route('/api/meeting/create', methods=['GET', 'POST'])  # TODO remove get
 def meeting_create():
     session = Session()
@@ -58,8 +50,6 @@ def meeting_create():
 
     session.commit()
 
-    print(new_meeting)
-
     return jsonify({'ok': True, 'created_id': new_meeting.id})
 
 
@@ -68,25 +58,33 @@ def meeting_edit():
     session = Session()
 
     print(request.json)
-    new_meeting_json = request_json2['meeting']  # TODO request json
+    if request_json2.get('meeting') is None:
+        return jsonify({'ok': False, 'error': '"meeting" key is missing'})
+    new_meeting_json = request_json2['meeting']
 
-    meeting = session.get(Meeting, new_meeting_json['id'])  # TODO if None
+    try:
+        meeting_validated = MeetingSchema(**new_meeting_json)
+    except ValidationError as e:
+        error_message = make_pydantic_error_message(e)
+        return jsonify({'ok': False, 'error': error_message})
 
-    meeting.title = new_meeting_json['title']
-    meeting.start_date_time = reformat_datetime(new_meeting_json['start_date_time'])
-    meeting.end_date_time = reformat_datetime(new_meeting_json['end_date_time'])
+    meeting = session.get(Meeting, meeting_validated.id)
+    if meeting is None:
+        return jsonify({'ok': False, 'error': f'meeting with id {meeting_validated.id} does not exists'})
+
+    meeting.title = meeting_validated.title
+    meeting.start_date_time = meeting_validated.start_date_time
+    meeting.end_date_time = meeting_validated.end_date_time
 
     emails = session.query(ParticipantEmails).filter_by(meeting_id=meeting.id)
     for email in emails:
         session.delete(email)
 
-    for email in new_meeting_json['participant_emails']:
-        new_email = ParticipantEmails(meeting_id=new_meeting_json['id'],
+    for email in meeting_validated.participant_emails:
+        new_email = ParticipantEmails(meeting_id=meeting.id,
                                       email=email)
         session.add(new_email)
     session.commit()
-
-    print(meeting)
 
     return jsonify({'ok': True, 'edited_id': meeting.id})
 
