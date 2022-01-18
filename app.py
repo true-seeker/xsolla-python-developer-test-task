@@ -8,7 +8,7 @@ from models import Meeting, ParticipantEmails, engine
 
 app = Flask(__name__)
 Session = sessionmaker(bind=engine)
-
+DEFAULT_PAGE_SIZE = 50
 request_json = json.load(open('test.json'))
 request_json2 = json.load(open('test2.json'))
 request_json3 = json.load(open('test3.json'))
@@ -47,7 +47,7 @@ def meeting_create():
     return jsonify({'ok': True, 'created_id': new_meeting.id})
 
 
-@app.route('/api/meeting/edit', methods=['GET', 'POST'])  # TODO remove get
+@app.route('/api/meeting/edit', methods=['GET', 'PATCH'])  # TODO remove get
 def meeting_edit():
     session = Session()
 
@@ -75,7 +75,7 @@ def meeting_edit():
     return jsonify({'ok': True, 'edited_id': meeting.id})
 
 
-@app.route('/api/meeting/delete', methods=['GET', 'POST'])  # TODO remove get
+@app.route('/api/meeting/delete', methods=['GET', 'DELETE'])  # TODO remove get
 def meeting_delete():
     session = Session()
 
@@ -89,7 +89,7 @@ def meeting_delete():
     return jsonify({'ok': True})
 
 
-@app.route('/api/meetings/get', methods=['GET'])
+@app.route('/api/meeting/get', methods=['GET'])
 def meeting_get():
     session = Session()
 
@@ -98,6 +98,23 @@ def meeting_get():
     meeting = session.get(Meeting, meeting_json['id'])  # TODO if None
 
     return jsonify(meeting.as_dict())
+
+
+@app.route('/api/meetings/get', methods=['GET'])
+def meetings_get_all():
+    session = Session()
+
+    print(request.json)
+
+    page = 0  # TODO remove
+    meetings = session.query(Meeting).slice(page * DEFAULT_PAGE_SIZE, (page + 1) * DEFAULT_PAGE_SIZE)
+    meetings_count = session.query(Meeting).count()
+
+    has_next_page = True if (page + 1) * DEFAULT_PAGE_SIZE < meetings_count else False
+
+    return jsonify({'meetings': [m.as_dict() for m in meetings],
+                    'has_next_page': has_next_page,
+                    'page_size': DEFAULT_PAGE_SIZE})
 
 
 if __name__ == '__main__':
