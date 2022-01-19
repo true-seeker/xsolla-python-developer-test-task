@@ -1,13 +1,13 @@
-from dataclasses import dataclass
-
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, create_engine
 from sqlalchemy.orm import declarative_base, relationship
 
+engine = create_engine('sqlite:///sqlite3.db')
 Base = declarative_base()
 
 
-# Таблица встреч
 class Meeting(Base):
+    """Модель таблицы встреч"""
+
     __tablename__ = 'meetings'
 
     def as_dict(self):
@@ -34,9 +34,11 @@ class Meeting(Base):
         return f'{self.id}|{self.title}|{self.start_date_time}|{self.end_date_time}'
 
 
-# Таблица с email участников встреч
 class ParticipantEmails(Base):
+    """Модель таблицы с email участников встреч"""
+
     __tablename__ = 'participant_emails'
+
     id = Column(Integer, primary_key=True)
     meeting_id = Column(ForeignKey('meetings.id'))
     meeting = relationship("Meeting", back_populates="emails")
@@ -45,8 +47,6 @@ class ParticipantEmails(Base):
     def __repr__(self):
         return f'{self.id}|{self.meeting_id}|{self.email}'
 
-
-engine = create_engine('sqlite:///sqlite3.db')
 
 if __name__ == '__main__':
     # Инициализация таблиц в БД

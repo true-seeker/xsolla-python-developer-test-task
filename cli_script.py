@@ -7,6 +7,7 @@ DEFAULT_API_ROOT = 'http://127.0.0.1:5000/api'
 
 
 def createParser():
+    """Функция создания парсера аргументов"""
     parser = argparse.ArgumentParser()
     parser.add_argument('command',
                         help='Метод, который необходимо вызвать. Поддерживаемые команды: create, edit, delete, get, get_all',
@@ -23,6 +24,7 @@ def createParser():
 
 
 def get_all_meetings(page, page_size, api_root=DEFAULT_API_ROOT):
+    """Получение всех встреч"""
     try:
         r = requests.get(f'{api_root}/meetings/get?page={page}&page_size={page_size}')
     except ConnectionError:
@@ -32,6 +34,7 @@ def get_all_meetings(page, page_size, api_root=DEFAULT_API_ROOT):
 
 
 def edit_meeting(meeting_id, filename, api_root=DEFAULT_API_ROOT):
+    """Редактирование встречи по id"""
     data_json = json.load(open(filename, 'r'))
     try:
         r = requests.patch(f'{api_root}/meeting/edit/{meeting_id}',
@@ -43,6 +46,7 @@ def edit_meeting(meeting_id, filename, api_root=DEFAULT_API_ROOT):
 
 
 def create_meeting(filename, api_root=DEFAULT_API_ROOT):
+    """Создание встречи"""
     data_json = json.load(open(filename, 'r'))
     try:
         r = requests.post(f'{api_root}/meeting/create',
@@ -54,6 +58,7 @@ def create_meeting(filename, api_root=DEFAULT_API_ROOT):
 
 
 def delete_meeting(meeting_id, api_root=DEFAULT_API_ROOT):
+    """Удаление встречи по id"""
     try:
         r = requests.delete(f'{api_root}/meeting/delete/{meeting_id}')
     except ConnectionError:
@@ -63,6 +68,7 @@ def delete_meeting(meeting_id, api_root=DEFAULT_API_ROOT):
 
 
 def get_meeting(meeting_id, api_root=DEFAULT_API_ROOT):
+    """Получение встречи по id"""
     try:
         r = requests.get(f'{api_root}/meeting/get/{meeting_id}')
     except ConnectionError:
@@ -76,6 +82,7 @@ if __name__ == '__main__':
     namespace = parser.parse_args()
 
     api_root = namespace.api_root if namespace.api_root else DEFAULT_API_ROOT
+
     if namespace.command == 'create':
         if not namespace.file:
             print('Параметр -f не указан')

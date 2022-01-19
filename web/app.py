@@ -14,6 +14,7 @@ MAX_PAGE_SIZE = 100
 
 
 def make_pydantic_error_message(e):
+    """Функция формирования сообщения об ошибке валидации входных данных"""
     error_message = ''
     for error in json.loads(e.json()):
         error_message += f'{error["msg"]} at {",".join(error["loc"])};'
@@ -22,9 +23,10 @@ def make_pydantic_error_message(e):
 
 @app.route('/api/meeting/create', methods=['POST'])
 def meeting_create():
+    """Создание встречи"""
     session = Session()
 
-    print(request.json)
+    # Валидация входных данных
     if request.json is None:
         return jsonify({'ok': False, 'error': 'json is missing'})
     if request.json.get('meeting') is None:
@@ -54,7 +56,10 @@ def meeting_create():
 
 @app.route('/api/meeting/edit/<meeting_id>', methods=['PATCH'])
 def meeting_edit(meeting_id):
+    """Редактирование встречи по id"""
     session = Session()
+
+    # Валидация входных данных
     if request.json is None:
         return jsonify({'ok': False, 'error': 'json is missing'})
     if request.json.get('meeting') is None:
@@ -90,9 +95,12 @@ def meeting_edit(meeting_id):
 
 @app.route('/api/meeting/delete/<meeting_id>', methods=['DELETE'])
 def meeting_delete(meeting_id):
+    """Удаление встречи по id"""
     session = Session()
 
     meeting = session.get(Meeting, meeting_id)
+
+    # Валидация входных данных
     if meeting is None:
         return jsonify({'ok': False, 'error': f'Meeting with id {meeting_id} does not exists'})
 
@@ -104,10 +112,12 @@ def meeting_delete(meeting_id):
 
 @app.route('/api/meeting/get/<meeting_id>', methods=['GET'])
 def meeting_get(meeting_id):
+    """Получение встречи по id"""
     session = Session()
 
     meeting = session.get(Meeting, meeting_id)
 
+    # Валидация входных данных
     if meeting is None:
         return jsonify({'ok': False, 'error': f'Meeting with id {meeting_id} does not exists'})
 
@@ -116,13 +126,17 @@ def meeting_get(meeting_id):
 
 @app.route('/api/meetings/get', methods=['GET'])
 def meetings_get_all():
+    """Получение всех встреч"""
     session = Session()
 
+    # Получение номера страницы
     page = request.args.get('page')
     if page is None:
         page = 0
     page = int(page)
 
+    # Получение кол-ва встреч на странице
+    # Если кол-во больше, чем MAX_PAGE_SIZE, то присваиваем MAX_PAGE_SIZE
     page_size = request.args.get('page_size')
     if page_size is None:
         page_size = DEFAULT_PAGE_SIZE
