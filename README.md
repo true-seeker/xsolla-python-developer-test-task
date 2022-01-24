@@ -20,12 +20,14 @@ ___
     2. Установить зависимости с помощью пакетного менеджера pip: ```pip install -r web/requirements.txt```
     3. Запустить веб-сервер: ```python web/app.py```
 
+Пример входных данных можно найти в файле example.json
 ___
 
 ### CLI обёртка
 
 Синтаксис обращения к CLI обёртке:
-```python cli_script.py <команда> <параметры>```
+```python cli_script.py <команда> <параметры>```  
+Пример: ```python cli_script.py create -f a.json```
 
 Список команд:
 

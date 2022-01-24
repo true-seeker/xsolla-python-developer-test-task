@@ -29,11 +29,9 @@ def meeting_create():
     # Валидация входных данных
     if request.json is None:
         return jsonify({'ok': False, 'error': 'json is missing'})
-    if request.json.get('meeting') is None:
-        return jsonify({'ok': False, 'error': '"meeting" key is missing'})
 
     try:
-        meeting_validated = MeetingSchema(**request.json['meeting'])
+        meeting_validated = MeetingSchema(**request.json)
     except ValidationError as e:
         error_message = make_pydantic_error_message(e)
         return jsonify({'ok': False, 'error': error_message})
@@ -62,12 +60,9 @@ def meeting_edit(meeting_id):
     # Валидация входных данных
     if request.json is None:
         return jsonify({'ok': False, 'error': 'json is missing'})
-    if request.json.get('meeting') is None:
-        return jsonify({'ok': False, 'error': '"meeting" key is missing'})
-    new_meeting_json = request.json['meeting']
 
     try:
-        meeting_validated = MeetingSchema(**new_meeting_json)
+        meeting_validated = MeetingSchema(**request.json)
     except ValidationError as e:
         error_message = make_pydantic_error_message(e)
         return jsonify({'ok': False, 'error': error_message})
